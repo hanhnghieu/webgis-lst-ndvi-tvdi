@@ -40,7 +40,7 @@ h2{font-size:18px;margin:0 0 4px}.sub{color:var(--mut);font-size:13px;margin:0 0
 .r .t{grid-column:2/4;height:6px;border-radius:9px;background:var(--c);opacity:.7;margin-top:-4px}
 .seg{display:flex;height:22px;border-radius:99px;overflow:hidden;margin:6px 0 12px}
 .cls{display:flex;align-items:center;gap:8px;margin:4px 0}.cls i{width:14px;height:14px;border-radius:4px;border:1px solid #0003}.cls span:last-child{margin-left:auto;font-weight:700}
-#cw{position:relative;height:300px}
+.tc{margin:18px 0 6px}.tc h3{font-size:16px;margin:0 0 2px}.cap{font-size:13.5px;color:var(--mut);margin:0 0 6px}.cv{position:relative;height:210px}
 .msg{padding:30px;text-align:center;color:var(--mut)}
 footer{font-size:13px;color:var(--mut);padding:6px 0 30px;text-align:center}
 @media print{body{background:#fff}.bar,.top button{display:none}.sec,.k,.lead{break-inside:avoid}}
@@ -58,7 +58,7 @@ const CLS=[['Rất ẩm','#066b00'],['Ẩm','#00ff00'],['Bình thường','#ffff
 const MT=['Cả năm',...Array.from({length:12},(_,i)=>'Tháng '+(i+1)),'Mùa khô (T1–4, T11–12)'];
 const fmt=(x,d)=>x==null?'–':x.toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});
 const wm=r=>{const n=r.reduce((a,x)=>a+x.n,0);return r.reduce((a,x)=>a+x.tb*x.n,0)/n};
-let chart,META;
+let charts=[],META;
 const kv=(c,y,m)=>api(`/api/khuvuc?chi_so=${c}&nam=${y}&thang=${m}`);
 function delta(k,cur,prev,y){if(prev==null)return'<span class="d n">chưa có năm '+(y-1)+' để so sánh</span>';
  const dd=cur-prev,L=LY[k],s=Math.abs(dd)<Math.pow(10,-L.d)/2?0:Math.sign(dd),cls=s===0?'n':(s===L.good?'good':'bad');
@@ -83,15 +83,28 @@ async function build(){
  h+=rank('🌳 Xanh nhất','5 huyện có NDVI cao nhất','ndvi',N.slice(0,5));
  h+=rank('🏜️ Khô hạn nhất','5 huyện có TVDI cao nhất','tvdi',T.slice(0,5));
  h+='</div><div class="sec"><h2>Phân cấp khô hạn (TVDI)</h2><p class="sub">Tỷ lệ ô lưới theo 5 cấp</p><div id="cls"></div></div>';
- h+='<div class="sec"><h2>Diễn biến theo tháng</h2><p class="sub">Trung bình toàn vùng, toàn bộ chuỗi dữ liệu (nét đứt là dự báo nếu có)</p><div id="cw"><canvas id="ch"></canvas></div></div>';
+ h+='<div class="sec"><h2>Diễn biến theo tháng</h2><p class="sub">Mỗi chỉ số một biểu đồ riêng, trung bình toàn vùng. <b>Đường nhạt</b>: từng tháng. <b>Đường đậm</b>: trung bình trượt 12 tháng, cho thấy xu thế. <b>Nét đứt và vùng mờ</b>: dự báo và khoảng tin cậy (nếu có).</p>'+['lst','ndvi','tvdi'].map((k,i)=>`<div class="tc"><h3 style="color:${LY[k].c}">${LY[k].n}${LY[k].u?' ('+LY[k].u.trim()+')':''}</h3><p class="cap" id="cap${i}"></p><div class="cv"><canvas id="ch${i}"></canvas></div></div>`).join('')+'</div>';
  $('out').innerHTML=h;
  api(`/api/grid?chi_so=tvdi&nam=${y}&thang=${m}`).then(g=>{const c=[0,0,0,0,0];g.pts.forEach(p=>c[Math.min(4,Math.floor(p[2]*5))]++);const n=g.pts.length||1;
   $('cls').innerHTML=`<div class="seg">${CLS.map((k,i)=>`<div style="flex:${c[i]};background:${k[1]}"></div>`).join('')}</div>`+CLS.map((k,i)=>`<div class="cls"><i style="background:${k[1]}"></i><span>${k[0]}</span><span>${fmt(c[i]/n*100,1)}%</span></div>`).join('')}).catch(()=>{});
- api('/api/series').then(d=>{const labels=[...new Set([...d.hist.LST.map(x=>x[0]),...Object.values(d.pred).flat().map(x=>x[0])])].sort(),cl={LST:LY.lst.c,NDVI:LY.ndvi.c,TVDI:LY.tvdi.c},ds=[];
-  for(const k of['LST','NDVI','TVDI']){const hh=new Map(d.hist[k]),ax=k==='LST'?'y':'y1';
-   ds.push({label:k,data:labels.map(l=>hh.get(l)??null),borderColor:cl[k],backgroundColor:cl[k],yAxisID:ax,spanGaps:true,pointRadius:1.5,borderWidth:2,tension:.25});
-   if(d.pred[k]){const pr=new Map(d.pred[k].map(x=>[x[0],x[1]]));ds.push({label:k+' dự báo',data:labels.map(l=>pr.get(l)??null),borderColor:cl[k],borderDash:[5,4],yAxisID:ax,pointRadius:0,spanGaps:true,borderWidth:2})}}
-  chart&&chart.destroy();chart=new Chart($('ch'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{title:{display:true,text:'LST (°C)'}},y1:{position:'right',title:{display:true,text:'NDVI, TVDI'},grid:{drawOnChartArea:false}},x:{ticks:{maxTicksLimit:8}}}}})}).catch(()=>{});
+ api('/api/series').then(d=>{
+  const labels=[...new Set([...d.hist.LST.map(x=>x[0]),...Object.values(d.pred).flat().map(x=>x[0])])].sort();
+  charts.forEach(c=>c.destroy());charts=[];
+  ['lst','ndvi','tvdi'].forEach((k,i)=>{const K=k.toUpperCase(),L=LY[k],h=new Map(d.hist[K]),raw=labels.map(l=>h.get(l)??null);
+   const ma=raw.map((_,j)=>{const w=raw.slice(Math.max(0,j-11),j+1).filter(v=>v!=null);return w.length>=6?w.reduce((a,b)=>a+b,0)/w.length:null});
+   const hv=d.hist[K].map(x=>x[1]).filter(v=>v!=null),mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+   if(hv.length>=24){const r=mean(hv.slice(-12)),p=mean(hv.slice(-24,-12)),dd=r-p;
+    $('cap'+i).innerHTML=`12 tháng gần nhất: <b>${fmt(r,L.d)}${L.u}</b>, ${Math.abs(dd)<Math.pow(10,-L.d)/2?'gần như không đổi':(dd>0?'tăng ':'giảm ')+fmt(Math.abs(dd),L.d)+L.u} so với 12 tháng trước đó.`}
+   const pr=d.pred[K]||[],pm=new Map(pr.map(x=>[x[0],x]));
+   const ds=[{label:'Theo tháng',data:raw,borderColor:L.c+'66',borderWidth:1.2,pointRadius:0,spanGaps:true,tension:.2},
+    {label:'Trung bình trượt 12 tháng',data:ma,borderColor:L.c,borderWidth:3.5,pointRadius:0,spanGaps:true,tension:.3}];
+   if(pr.length){ds.push({label:'Dự báo',data:labels.map(l=>pm.get(l)?pm.get(l)[1]:null),borderColor:'#10261c',borderDash:[6,4],borderWidth:2.5,pointRadius:2,spanGaps:true},
+    {label:'can_duoi',data:labels.map(l=>pm.get(l)?pm.get(l)[2]:null),borderWidth:0,pointRadius:0,fill:false,spanGaps:true},
+    {label:'Khoảng tin cậy',data:labels.map(l=>pm.get(l)?pm.get(l)[3]:null),borderWidth:0,pointRadius:0,backgroundColor:L.c+'33',fill:'-1',spanGaps:true})}
+   charts.push(new Chart($('ch'+i),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:it=>it.text!=='can_duoi'}},tooltip:{filter:it=>it.dataset.label!=='can_duoi'}},
+    scales:{y:{title:{display:true,text:k==='lst'?'°C':'giá trị'},ticks:{callback:v=>fmt(v,L.d)}},x:{ticks:{autoSkip:false,maxRotation:0,callback:function(v){const l=this.getLabelForValue(v);return l.endsWith('-01')?l.slice(0,4):null}},grid:{display:false}}}}}))})
+  }).catch(()=>{});
  }catch(e){$('out').innerHTML='<div class="msg">Không tải được dữ liệu: '+e.message+'</div>'}}
 (async()=>{try{META=await api('/api/meta');const ys=META.years;
  $('ny').innerHTML=ys.map(y=>`<option>${y}</option>`).join('');$('ny').value=ys[ys.length-1];

@@ -116,9 +116,15 @@ function overview(st,diff){const chi=S.chi,L0=LY[chi],mt=['Cả năm',...Array.f
 function regions(r){const v=r.map(x=>x.tb),lo=Math.min(...v),hi=Math.max(...v);
  $('rg').innerHTML=`<p class="hint">Trung bình theo huyện, sắp từ cao xuống thấp. Bấm vào một dòng để phóng tới huyện đó.</p><table>`+r.map(x=>`<tr class="h" data-n="${x.huyen}"><td>${x.huyen||'?'}<br><small style="color:var(--mut)">${x.tinh||''}</small></td><td style="width:45%;text-align:right"><b>${f(x.tb,S.chi)}</b><div class="mb" style="width:${15+85*(x.tb-lo)/(hi-lo||1)}%;margin-left:auto"></div></td></tr>`).join('')+'</table>';
  document.querySelectorAll('tr.h').forEach(t=>t.onclick=()=>{const l=bmap[t.dataset.n];if(l)map.fitBounds(l.getBounds(),{padding:[40,40]})})}
+let FEATS=[];const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function inRing(x,y,r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const a=r[i],b=r[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+function inPoly(x,y,poly){if(!inRing(x,y,poly[0]))return false;for(let k=1;k<poly.length;k++)if(inRing(x,y,poly[k]))return false;return true}
+function huyenAt(ll){for(const ft of FEATS){const g=ft.geometry;if(!g)continue;const ps=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];if(ps.some(p=>inPoly(ll.lng,ll.lat,p)))return ft.properties}return null}
 function near(ll){let b=null,d=1e9;const k=Math.cos(ll.lat*Math.PI/180);for(const p of S.pts){const e=(p[1]-ll.lat)**2+((p[0]-ll.lng)*k)**2;if(e<d){d=e;b=p}}return d<(S.cell*1.5)**2?b:null}
-let tick=0;map.on('mousemove',e=>{if(tick)return;tick=requestAnimationFrame(()=>{tick=0;const p=near(e.latlng);$('hover').innerHTML=p?`<b>${f(p[2],S.chi)}${LY[S.chi].u}</b> · ${p[1].toFixed(3)}, ${p[0].toFixed(3)}`:'Rê chuột lên vùng có màu để xem giá trị.'})});
-map.on('click',e=>{const p=near(e.latlng);if(!p){toast('Hãy bấm vào vùng có màu trên bản đồ');return}
+let tick=0;map.on('mousemove',e=>{if(tick)return;tick=requestAnimationFrame(()=>{tick=0;const p=near(e.latlng),h=huyenAt(e.latlng),hn=h?`<br><small>${esc(h.ten)}${h.tinh?' · '+esc(h.tinh):''}</small>`:'';$('hover').innerHTML=p?`<b>${f(p[2],S.chi)}${LY[S.chi].u}</b> · ${p[1].toFixed(3)}, ${p[0].toFixed(3)}${hn}`:(h?`<b>${esc(h.ten)}</b><br><small>${esc(h.tinh)}</small>`:'Rê chuột lên vùng có màu để xem giá trị.')})});
+map.on('click',e=>{const p=near(e.latlng),h=huyenAt(e.latlng);
+ if(h)L.popup({closeButton:true,autoPan:false}).setLatLng(e.latlng).setContent(`<b style="font-size:15px">${esc(h.ten)}</b><br>${esc(h.tinh)}${p?`<br>${LY[S.chi].n}: <b>${f(p[2],S.chi)}${LY[S.chi].u}</b>`:''}`).openOn(map);
+ if(!p){if(!h)toast('Hãy bấm vào vùng có màu trên bản đồ');return}
  S.sel=p;mark.clearLayers();L.circleMarker([p[1],p[0]],{radius:7,color:'#000',weight:2,fillOpacity:0}).addTo(mark);tab('ts');drawChart(p)});
 async function drawChart(p){$('tsh').textContent=p?`Ô tại ${p[1].toFixed(3)}, ${p[0].toFixed(3)}. Nét đứt là dự báo.`:'Trung bình toàn vùng. Bấm vào bản đồ để xem riêng một ô. Nét đứt là dự báo.';
  let d;try{d=await api('/api/series'+(p?`?lon=${p[0]}&lat=${p[1]}`:''))}catch(e){toast('Ô này chưa có chuỗi thời gian');return}
@@ -139,7 +145,7 @@ async function init(){
  document.querySelectorAll('.lay').forEach(b=>b.onclick=()=>{document.querySelectorAll('.lay').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.chi=b.dataset.k;load()});
  document.querySelectorAll('.chip[data-y]').forEach(c=>c.onclick=()=>setYear(+c.dataset.y));
  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
- api('/api/ranhgioi').then(j=>L.geoJSON(j,{style:{color:'#0b5d33',weight:1.2,fill:false},onEachFeature:(ft,l)=>{bmap[ft.properties.ten]=l;l.bindTooltip(ft.properties.ten||'')}}).addTo(bnd)).catch(()=>{});
+ api('/api/ranhgioi').then(j=>{FEATS=j.features||[];L.geoJSON(j,{style:{color:'#0b5d33',weight:1.2,fill:false},onEachFeature:(ft,l)=>{bmap[ft.properties.ten]=l;l.bindTooltip(ft.properties.ten||'')}}).addTo(bnd)}).catch(()=>{});
  await load();toast('Bấm vào một ô trên bản đồ để xem chuỗi thời gian của ô đó')}
 $('month').onchange=e=>{S.month=+e.target.value;load()};['shared','diff','base'].forEach(i=>$(i).onchange=load);
 $('op').oninput=()=>cells.eachLayer(l=>l.setStyle({fillOpacity:$('op').value/100}));

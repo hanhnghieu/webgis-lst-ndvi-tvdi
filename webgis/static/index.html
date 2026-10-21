@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Giới thiệu WebGIS LST – NDVI – TVDI · TP. Hồ Chí Minh</title>
+<style>
+:root{--ink:#10261c;--mut:#445a4f;--line:#c4dccd;--bg:#e9f7ee;--g:#0b5d33;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{background:#fff;border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+nav b{color:var(--g)}
+.btn{display:inline-block;background:var(--g);color:#fff;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:999px;font-size:16px}
+.btn:hover{background:#08461f}
+nav .btn{padding:8px 18px;font-size:14px}
+.hero{padding:56px 0 36px;text-align:center}
+.hero small{display:inline-block;background:#fff;border:1px solid var(--line);color:var(--g);font-weight:700;border-radius:999px;padding:4px 14px;font-size:13px}
+.hero h1{font-size:clamp(28px,5vw,44px);line-height:1.2;margin:16px auto 12px;max-width:760px}
+.hero p{font-size:17px;color:var(--mut);max-width:680px;margin:0 auto 26px}
+h2{font-size:22px;margin:0 0 6px}
+.sub{color:var(--mut);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:40px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;border-top:4px solid var(--g)}
+.c .i{font-size:26px}
+.c h3{margin:6px 0 4px;font-size:17px}
+.c p{margin:0;color:var(--mut);font-size:14.5px}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-bottom:40px}
+.l{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.l b{font-size:16px}.l span{display:block;color:var(--mut);font-size:14px;margin:2px 0 10px}
+.bar{height:14px;border-radius:7px;border:1px solid var(--line)}
+.rng{display:flex;justify-content:space-between;font-size:12.5px;color:var(--mut);margin-top:4px}
+.how{counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:36px}
+.h{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 16px 58px;position:relative;font-size:14.5px}
+.h:before{counter-increment:s;content:counter(s);position:absolute;left:14px;top:14px;width:30px;height:30px;border-radius:50%;background:var(--g);color:#fff;font-weight:700;display:grid;place-items:center}
+.h b{display:block}
+.cta{background:#fff;border:1px solid var(--line);border-radius:20px;text-align:center;padding:34px 20px;margin-bottom:44px}
+.cta h2{margin-bottom:8px}.cta p{color:var(--mut);margin:0 0 18px}
+.note{font-size:13.5px;color:var(--mut);margin:-24px 0 40px}
+footer{background:#fff;border-top:1px solid var(--line);padding:20px 0;font-size:13.5px;color:var(--mut);text-align:center}
+</style></head><body>
+<nav><div class="wrap"><b>🌿 WebGIS Môi trường TP.HCM</b><span><a href="/bantin.html" style="color:#0b5d33;font-weight:700;text-decoration:none;margin-right:18px">Bản tin</a><a class="btn" href="/map.html">Vào bản đồ</a></span></div></nav>
+
+<header class="hero"><div class="wrap">
+ <small>Giới thiệu hệ thống</small>
+ <h1>WebGIS theo dõi nhiệt độ, cây xanh và khô hạn TP. Hồ Chí Minh</h1>
+ <p>Trang web cho phép xem, so sánh và thống kê ba chỉ số môi trường LST, NDVI, TVDI tính từ ảnh Landsat 8/9, theo năm, tháng và từng khu vực. Dữ liệu lấy trực tiếp từ CSDL PostgreSQL/PostGIS.</p>
+ <a class="btn" href="/map.html">Bắt đầu xem bản đồ →</a>
+</div></header>
+
+<main class="wrap">
+ <h2>Bạn có thể làm gì trên trang web</h2>
+ <p class="sub">Các chức năng chính của bản đồ tương tác.</p>
+ <div class="grid">
+  <div class="c"><div class="i">🗺️</div><h3>Xem bản đồ ba chỉ số</h3><p>Chuyển nhanh giữa nhiệt độ bề mặt, thảm thực vật và mức khô hạn trên lưới điểm toàn vùng.</p></div>
+  <div class="c"><div class="i">📅</div><h3>Chọn thời gian</h3><p>Chọn năm, từng tháng, cả năm hoặc mùa khô; bấm nút phát để xem biến đổi theo các năm.</p></div>
+  <div class="c"><div class="i">🔀</div><h3>So sánh giữa các năm</h3><p>Bật chế độ so sánh để thấy nơi nào tăng, nơi nào giảm so với một năm làm mốc.</p></div>
+  <div class="c"><div class="i">📈</div><h3>Chuỗi thời gian và dự báo</h3><p>Chọn một điểm trên bản đồ hoặc toàn vùng để xem biểu đồ theo tháng, kèm dự báo nếu đã chạy mô hình.</p></div>
+  <div class="c"><div class="i">🏘️</div><h3>Thống kê theo huyện</h3><p>Bảng xếp hạng giá trị trung bình theo ranh giới huyện của TP.HCM, Bình Dương và Bà Rịa – Vũng Tàu cũ.</p></div>
+  <div class="c"><div class="i">⬇️</div><h3>Tải dữ liệu và đổi nền</h3><p>Tải CSV dữ liệu đang xem; đổi nền bản đồ sáng, đường phố hoặc ảnh vệ tinh; bật tắt ranh giới huyện.</p></div>
+ </div>
+
+ <h2>Thang màu hiển thị</h2>
+ <p class="sub">Thang màu và khoảng giá trị cố định, dùng thống nhất cho mọi năm.</p>
+ <div class="layers">
+  <div class="l"><b>🌡️ Nhiệt độ bề mặt (LST)</b><span>Nóng ở lõi đô thị, khu công nghiệp</span>
+   <div class="bar" style="background:linear-gradient(90deg,#0000FF,#0066FF,#00FFFF,#00FF00,#FFFF00,#FFCC00,#FF6600,#FF0000)"></div><div class="rng"><span>20 °C</span><span>45 °C</span></div></div>
+  <div class="l"><b>🌳 Thảm thực vật (NDVI)</b><span>Đỏ là ít cây xanh, xanh dương là thực vật dày</span>
+   <div class="bar" style="background:linear-gradient(90deg,#FF0000,#FF7F00,#FFFF00,#ADFF2F,#00FF00,#00FFFF,#007FFF,#0000FF)"></div><div class="rng"><span>−0,2</span><span>1</span></div></div>
+  <div class="l"><b>💧 Khô hạn (TVDI)</b><span>Xanh là ẩm, đỏ là rất khô hạn</span>
+   <div class="bar" style="background:linear-gradient(90deg,#066b00,#0bc400,#0ce100,#00ff00,#ffff00,#ffcc00,#ff6600,#ff0000)"></div><div class="rng"><span>0</span><span>1</span></div></div>
+ </div>
+
+ <h2>Hướng dẫn nhanh</h2>
+ <p class="sub">Bốn bước để bắt đầu.</p>
+ <div class="how">
+  <div class="h"><b>Chọn chỉ số</b>Ở bảng bên trái, chọn LST, NDVI hoặc TVDI.</div>
+  <div class="h"><b>Chọn thời gian</b>Bấm năm ở thanh dưới, chọn tháng hoặc mùa khô.</div>
+  <div class="h"><b>Rê chuột, bấm điểm</b>Xem giá trị từng ô lưới và biểu đồ theo thời gian.</div>
+  <div class="h"><b>Xem thống kê</b>Mở thẻ "Theo huyện" ở bảng bên phải.</div>
+ </div>
+
+ <div class="cta"><h2>Sẵn sàng khám phá?</h2><p>Dữ liệu: <b id="s-y">…</b> · lưới điểm <b id="s-c">…</b> · ảnh Landsat 8/9 độ phân giải 30 m</p>
+  <a class="btn" href="/map.html">Mở bản đồ tương tác</a></div>
+</main>
+
+<footer><div class="wrap">Trường Đại học Tài nguyên và Môi trường TP. Hồ Chí Minh · Khoa Công nghệ thông tin · Lớp 13_ĐH_CNTT4<br>GVHD: TS. Dương Thị Thúy Nga, ThS. Nguyễn Duy Tuấn</div></footer>
+<script>
+fetch('/api/meta').then(r=>r.json()).then(m=>{
+ const y=m.years||[];
+ document.getElementById('s-y').textContent=y.length?(y[0]===y[y.length-1]?y[0]:y[0]+'–'+y[y.length-1]):'—';
+ document.getElementById('s-c').textContent=m.cell_m?(m.cell_m/1000).toString().replace('.',',')+' km':'—';
+}).catch(()=>{document.getElementById('s-y').textContent='2020–2026';document.getElementById('s-c').textContent='1,5 km'});
+</script>
+</body></html>

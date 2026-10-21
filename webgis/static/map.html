@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bản đồ nhiệt độ, thực vật và khô hạn – TP. Hồ Chí Minh</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--ink:#10261c;--mut:#445a4f;--line:#c4dccd;--bg:#e9f7ee;--ac:#c2410c;--blue:#0b6fa4}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:14px/1.45 'Be Vietnam Pro',system-ui,sans-serif;color:var(--ink);overflow:hidden;position:relative}
+#map{position:absolute;inset:0;background:var(--bg)}
+.card{position:absolute;z-index:1000;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 20px rgba(16,60,40,.16);border-top:4px solid var(--ac)}
+button,select{font:inherit;color:inherit}button{cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+#left{top:16px;left:16px;width:304px;padding:16px;max-height:calc(100% - 100px);overflow:auto}
+#home{display:inline-block;margin:0 0 8px;font-size:13px;font-weight:700;color:#0b5d33;text-decoration:none}#home:hover{text-decoration:underline}
+#left h1{color:#0b5d33;font-size:16px;line-height:1.3;margin:0 0 2px}#left p{margin:0 0 14px;color:var(--mut);font-size:12.5px}
+.lay{display:block;width:100%;text-align:left;padding:9px 12px;margin-bottom:6px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.lay b{display:block;font-weight:700}.lay span{color:var(--mut);font-size:12px}
+.lay.on{border-color:var(--ac);background:var(--ac);color:#fff}.lay.on span{color:#fff}
+#bar{height:10px;border-radius:99px;margin-top:12px}.lg{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:3px}
+#hover{margin-top:8px;padding:7px 10px;background:var(--bg);border-radius:8px;font-size:13px;min-height:34px}
+details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}summary{cursor:pointer;font-weight:500}
+details label{display:flex;gap:8px;align-items:center;margin:8px 0}details input[type=range]{width:100%}
+select{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+#time{left:16px;right:392px;bottom:16px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+#play{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--ac);color:#fff;font-size:15px}
+#years{flex:1;display:flex;gap:6px;overflow-x:auto;padding:2px}
+.chip{flex:none;padding:6px 14px;border:1px solid var(--line);border-radius:99px;background:#fff}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+#month{width:auto;flex:none;min-width:150px}
+#right{top:16px;right:16px;bottom:16px;width:360px;display:flex;flex-direction:column;overflow:hidden}
+#tabs{display:flex;border-bottom:1px solid var(--line)}
+#tabs button{flex:1;padding:12px 4px;border:0;background:none;border-bottom:3px solid transparent;color:var(--mut)}
+#tabs button.on{color:var(--ink);font-weight:700;border-color:var(--ac)}
+.pane{display:none;padding:16px;overflow:auto;flex:1}.pane.on{display:block}
+.big{font-size:38px;font-weight:700;line-height:1.1;color:var(--ac)}.big small{font-size:15px;color:var(--mut);font-weight:400}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}.kv div{background:var(--bg);border-radius:8px;padding:8px 10px}
+.kv i{display:block;font-style:normal;color:var(--mut);font-size:12px}
+.seg{display:flex;height:14px;border-radius:99px;overflow:hidden;margin:6px 0 10px}
+.cls{display:flex;align-items:center;gap:8px;margin:3px 0}.cls i{width:12px;height:12px;border-radius:3px;border:1px solid #0002}.cls span:last-child{margin-left:auto}
+table{width:100%;border-collapse:collapse}td{padding:7px 4px;border-bottom:1px solid var(--line)}tr.h{cursor:pointer}tr.h:hover{background:var(--bg)}
+.mb{height:6px;border-radius:99px;background:var(--ac);opacity:.75;margin-top:4px}
+.hint{color:var(--mut);font-size:13px;margin:0 0 10px}#cw{position:relative;height:300px}
+#toast{position:absolute;z-index:1100;left:50%;top:16px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:99px;font-size:13px;display:none}
+@media(max-width:860px){#left{width:calc(100% - 32px);max-height:42%}#right{top:auto;height:42%;left:16px;width:auto;bottom:80px}#time{right:16px}#month{min-width:110px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="map"></div><div id="toast"></div>
+<section class="card" id="left">
+ <a id="home" href="/">← Trang chủ</a>
+ <h1>Nhiệt độ, thực vật và khô hạn</h1><p>TP. Hồ Chí Minh sau sáp nhập · ảnh Landsat 8/9</p>
+ <div id="layers"></div>
+ <div id="bar"></div><div class="lg"><span id="vmin"></span><span id="vmax"></span></div>
+ <div id="hover">Rê chuột lên bản đồ để xem giá trị.</div>
+ <details><summary>Tùy chọn hiển thị</summary>
+  <label>Độ đậm màu <input type="range" id="op" min="20" max="100" value="100"></label>
+  <label><input type="checkbox" id="bnd" checked> Hiện ranh giới huyện</label>
+  <label><input type="checkbox" id="shared" checked> Dùng thang chuẩn cố định (LST 20–45 °C, NDVI −0,2–1, TVDI 0–1)</label>
+  <label><input type="checkbox" id="diff"> So với năm</label><select id="base" aria-label="Năm so sánh"></select>
+  <button class="chip" id="csv" style="margin-top:10px">Tải dữ liệu đang xem (CSV)</button>
+ </details>
+</section>
+<section class="card" id="right">
+ <div id="tabs" role="tablist"><button data-t="ov" class="on">Tổng quan</button><button data-t="ts">Theo thời gian</button><button data-t="rg">Theo huyện</button></div>
+ <div class="pane on" id="ov"></div>
+ <div class="pane" id="ts"><p class="hint" id="tsh"></p><div id="cw"><canvas id="chart"></canvas></div></div>
+ <div class="pane" id="rg"></div>
+</section>
+<section class="card" id="time"><button id="play" aria-label="Phát hoạt ảnh theo năm">▶</button><div id="years"></div><select id="month" aria-label="Chọn tháng"></select></section>
+<script>
+const $=id=>document.getElementById(id),api=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+const LY={lst:{n:'Nhiệt độ bề mặt',d:'LST, đơn vị °C',u:' °C',ac:'#c2410c',r:[20,45],pal:['#0000FF','#0066FF','#00FFFF','#00FF00','#FFFF00','#FFCC00','#FF6600','#FF0000']},
+ ndvi:{n:'Thảm thực vật',d:'NDVI, càng cao càng xanh',u:'',ac:'#1f7a33',r:[-0.2,1],pal:['#FF0000','#FF7F00','#FFFF00','#ADFF2F','#00FF00','#00FFFF','#007FFF','#0000FF']},
+ tvdi:{n:'Mức khô hạn',d:'TVDI, 0 là ẩm, 1 là khô',u:'',ac:'#92560a',r:[0,1],pal:['#066b00','#0bc400','#0ce100','#00ff00','#ffff00','#ffcc00','#ff6600','#ff0000']}};
+const DIFF=['#2166ac','#f7f7f7','#d73027'],CLS=[['Rất ẩm','#066b00'],['Ẩm','#00ff00'],['Bình thường','#ffff00'],['Khô hạn','#ff6600'],['Rất khô hạn','#ff0000']];
+const rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+function col(s,t){t=Math.min(1,Math.max(0,t));const x=t*(s.length-1),i=Math.min(s.length-2,Math.floor(x)),f=x-i,a=rgb(s[i]),b=rgb(s[i+1]);return'rgb('+a.map((v,j)=>Math.round(v+(b[j]-v)*f)).join(',')+')'}
+const f=(x,c)=>x==null?'–':x.toFixed(c==='lst'?1:3),S={chi:'lst',year:null,month:0,pts:[],sel:null,play:null,meta:null,fit:false,cell:0};
+const map=L.map('map',{zoomControl:false}).setView([10.9,106.8],9);L.control.zoom({position:'bottomleft'}).addTo(map);
+const bm={'Bản đồ sáng':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:16}).addTo(map),
+ 'Đường phố':L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}),
+ 'Ảnh vệ tinh':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri'})};
+L.control.layers(bm,null,{position:'topright'}).addTo(map);
+const cells=L.featureGroup().addTo(map),bnd=L.layerGroup().addTo(map),mark=L.layerGroup().addTo(map),rend=L.canvas({padding:.5}),bmap={};let chart;
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)}
+function stats(v){const s=[...v].sort((a,b)=>a-b),n=s.length,m=s.reduce((a,b)=>a+b,0)/n;return{n,min:s[0],max:s[n-1],mean:m,med:s[n>>1],sd:Math.sqrt(s.reduce((a,b)=>a+(b-m)**2,0)/n),p2:s[Math.floor(n*.02)],p98:s[Math.floor(n*.98)]}}
+const q=(c,y,m)=>`chi_so=${c}&nam=${y}&thang=${m}`;
+async function load(){
+ const chi=S.chi,y=S.year,m=S.month,L0=LY[chi],diff=$('diff').checked&&+$('base').value!==y;
+ document.documentElement.style.setProperty('--ac',L0.ac);document.body.style.cursor='progress';
+ try{
+ let g=(await api(`/api/grid?${q(chi,y,m)}`)).pts,pal=L0.pal,lo,hi;
+ if(diff){const b=new Map((await api(`/api/grid?${q(chi,$('base').value,m)}`)).pts.map(p=>[p[0]+','+p[1],p[2]]));
+  g=g.filter(p=>b.has(p[0]+','+p[1])).map(p=>[p[0],p[1],p[2]-b.get(p[0]+','+p[1])]);
+  const a=g.map(p=>Math.abs(p[2])).sort((a,b)=>a-b)[Math.floor(g.length*.98)]||1;lo=-a;hi=a;pal=DIFF}
+ if(!g.length){toast('Không có dữ liệu cho lựa chọn này');cells.clearLayers();return}
+ S.pts=g;const st=stats(g.map(p=>p[2]));
+ if(!diff)[lo,hi]=$('shared').checked?L0.r:[st.p2,st.p98]
+ $('bar').style.background=`linear-gradient(90deg,${pal.join(',')})`;$('vmin').textContent=(diff?'Giảm ':'Thấp ')+f(lo,chi);$('vmax').textContent=(diff?'Tăng ':'Cao ')+f(hi,chi);
+ S.cell=S.meta.cell_m/111320/2;cells.clearLayers();const op=$('op').value/100;
+ g.forEach(p=>{const dx=S.cell/Math.cos(p[1]*Math.PI/180);L.rectangle([[p[1]-S.cell,p[0]-dx],[p[1]+S.cell,p[0]+dx]],{renderer:rend,interactive:false,stroke:false,fillColor:col(pal,(p[2]-lo)/(hi-lo||1)),fillOpacity:op}).addTo(cells)});
+ if(!S.fit){S.fit=true;map.fitBounds(cells.getBounds(),{padding:[30,30]})}
+ overview(st,diff);const r=await api(`/api/khuvuc?${q(chi,y,m)}`);regions(r)
+ }catch(e){toast('Không tải được dữ liệu: '+e.message)}finally{document.body.style.cursor=''}}
+function tamNote(){const t=(S.meta.tam||[]).filter(x=>x.nam===S.year&&(S.month===0||x.thang===S.month||(S.month===13&&[1,2,3,4,11,12].includes(x.thang))));
+ return t.length?`<p class="hint" style="color:#92560a">Có dữ liệu tạm thời: ${t.map(x=>'tháng '+x.thang+(x.den?' (ảnh mới nhất '+x.den.split('-').reverse().join('/')+')':'')).join(', ')}. Số liệu sẽ được cập nhật khi có ảnh Landsat mới và chốt sau khi tháng kết thúc.</p>`:''}
+function overview(st,diff){const chi=S.chi,L0=LY[chi],mt=['Cả năm',...Array.from({length:12},(_,i)=>'tháng '+(i+1)),'mùa khô'][S.month];
+ let h=`<p class="hint">${L0.n} · ${S.year} · ${mt}${diff?' · chênh lệch so với '+$('base').value:''}</p><div class="big">${diff&&st.mean>0?'+':''}${f(st.mean,chi)}<small>${diff?'':L0.u} trung bình</small></div>
+ <div class="kv"><div><i>Thấp nhất</i>${f(st.min,chi)}</div><div><i>Cao nhất</i>${f(st.max,chi)}</div><div><i>Trung vị</i>${f(st.med,chi)}</div><div><i>Độ lệch chuẩn</i>${f(st.sd,chi)}</div></div><p class="hint">Dựa trên ${st.n.toLocaleString('vi')} ô lưới.</p>`+tamNote();
+ if(chi==='tvdi'&&!diff){const c=[0,0,0,0,0];S.pts.forEach(p=>c[Math.min(4,Math.floor(p[2]*5))]++);
+  h+=`<b>5 cấp khô hạn</b><div class="seg">${CLS.map((k,i)=>`<div style="flex:${c[i]};background:${k[1]}"></div>`).join('')}</div>`+CLS.map((k,i)=>`<div class="cls"><i style="background:${k[1]}"></i><span>${k[0]}</span><span>${(c[i]/st.n*100).toFixed(1)}%</span></div>`).join('')}
+ $('ov').innerHTML=h}
+function regions(r){const v=r.map(x=>x.tb),lo=Math.min(...v),hi=Math.max(...v);
+ $('rg').innerHTML=`<p class="hint">Trung bình theo huyện, sắp từ cao xuống thấp. Bấm vào một dòng để phóng tới huyện đó.</p><table>`+r.map(x=>`<tr class="h" data-n="${x.huyen}"><td>${x.huyen||'?'}<br><small style="color:var(--mut)">${x.tinh||''}</small></td><td style="width:45%;text-align:right"><b>${f(x.tb,S.chi)}</b><div class="mb" style="width:${15+85*(x.tb-lo)/(hi-lo||1)}%;margin-left:auto"></div></td></tr>`).join('')+'</table>';
+ document.querySelectorAll('tr.h').forEach(t=>t.onclick=()=>{const l=bmap[t.dataset.n];if(l)map.fitBounds(l.getBounds(),{padding:[40,40]})})}
+function near(ll){let b=null,d=1e9;const k=Math.cos(ll.lat*Math.PI/180);for(const p of S.pts){const e=(p[1]-ll.lat)**2+((p[0]-ll.lng)*k)**2;if(e<d){d=e;b=p}}return d<(S.cell*1.5)**2?b:null}
+let tick=0;map.on('mousemove',e=>{if(tick)return;tick=requestAnimationFrame(()=>{tick=0;const p=near(e.latlng);$('hover').innerHTML=p?`<b>${f(p[2],S.chi)}${LY[S.chi].u}</b> · ${p[1].toFixed(3)}, ${p[0].toFixed(3)}`:'Rê chuột lên vùng có màu để xem giá trị.'})});
+map.on('click',e=>{const p=near(e.latlng);if(!p){toast('Hãy bấm vào vùng có màu trên bản đồ');return}
+ S.sel=p;mark.clearLayers();L.circleMarker([p[1],p[0]],{radius:7,color:'#000',weight:2,fillOpacity:0}).addTo(mark);tab('ts');drawChart(p)});
+async function drawChart(p){$('tsh').textContent=p?`Ô tại ${p[1].toFixed(3)}, ${p[0].toFixed(3)}. Nét đứt là dự báo.`:'Trung bình toàn vùng. Bấm vào bản đồ để xem riêng một ô. Nét đứt là dự báo.';
+ let d;try{d=await api('/api/series'+(p?`?lon=${p[0]}&lat=${p[1]}`:''))}catch(e){toast('Ô này chưa có chuỗi thời gian');return}
+ const labels=[...new Set([...d.hist.LST.map(x=>x[0]),...Object.values(d.pred).flat().map(x=>x[0])])].sort(),cl={LST:'#c2410c',NDVI:'#1f7a33',TVDI:'#0b6fa4'},ds=[];
+ for(const k of['LST','NDVI','TVDI']){const h=new Map(d.hist[k]),ax=k==='LST'?'y':'y1';
+  ds.push({label:k,data:labels.map(l=>h.get(l)??null),borderColor:cl[k],backgroundColor:cl[k],yAxisID:ax,spanGaps:true,pointRadius:1.5,borderWidth:2,tension:.25});
+  if(d.pred[k]){const pr=new Map(d.pred[k].map(x=>[x[0],x[1]]));ds.push({label:k+' dự báo',data:labels.map(l=>pr.get(l)??null),borderColor:cl[k],borderDash:[5,4],yAxisID:ax,pointRadius:0,spanGaps:true,borderWidth:2})}}
+ chart&&chart.destroy();chart=new Chart($('chart'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},
+  scales:{y:{title:{display:true,text:'LST (°C)'}},y1:{position:'right',title:{display:true,text:'NDVI, TVDI'},grid:{drawOnChartArea:false}},x:{ticks:{maxTicksLimit:6}}}}})}
+function tab(t){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===t));if(t==='ts'&&!chart)drawChart(S.sel)}
+function setYear(y){S.year=y;document.querySelectorAll('.chip[data-y]').forEach(c=>c.classList.toggle('on',+c.dataset.y===y));load()}
+async function init(){
+ S.meta=await api('/api/meta');const ys=S.meta.years;S.year=ys[ys.length-1];
+ $('layers').innerHTML=Object.entries(LY).map(([k,v])=>`<button class="lay${k==='lst'?' on':''}" data-k="${k}"><b>${v.n}</b><span>${v.d}</span></button>`).join('');
+ $('years').innerHTML=ys.map(y=>`<button class="chip${y===S.year?' on':''}" data-y="${y}">${y}</button>`).join('');
+ $('month').innerHTML=['Cả năm',...Array.from({length:12},(_,i)=>'Tháng '+(i+1)),'Mùa khô (T1–4, T11–12)'].map((t,i)=>`<option value="${i}">${t}</option>`).join('');
+ $('base').innerHTML=ys.map(y=>`<option>${y}</option>`).join('');
+ document.querySelectorAll('.lay').forEach(b=>b.onclick=()=>{document.querySelectorAll('.lay').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.chi=b.dataset.k;load()});
+ document.querySelectorAll('.chip[data-y]').forEach(c=>c.onclick=()=>setYear(+c.dataset.y));
+ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+ api('/api/ranhgioi').then(j=>L.geoJSON(j,{style:{color:'#0b5d33',weight:1.2,fill:false},onEachFeature:(ft,l)=>{bmap[ft.properties.ten]=l;l.bindTooltip(ft.properties.ten||'')}}).addTo(bnd)).catch(()=>{});
+ await load();toast('Bấm vào một ô trên bản đồ để xem chuỗi thời gian của ô đó')}
+$('month').onchange=e=>{S.month=+e.target.value;load()};['shared','diff','base'].forEach(i=>$(i).onchange=load);
+$('op').oninput=()=>cells.eachLayer(l=>l.setStyle({fillOpacity:$('op').value/100}));
+$('bnd').onchange=e=>e.target.checked?map.addLayer(bnd):map.removeLayer(bnd);
+$('play').onclick=()=>{if(S.play){clearInterval(S.play);S.play=null;$('play').textContent='▶';return}$('play').textContent='❚❚';const ys=S.meta.years;let busy=false;
+ S.play=setInterval(async()=>{if(busy)return;busy=true;setYear(ys[(ys.indexOf(S.year)+1)%ys.length]);await new Promise(r=>setTimeout(r,900));busy=false},1800)};
+$('csv').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['lon,lat,'+S.chi+'\n'+S.pts.map(p=>p.join(',')).join('\n')],{type:'text/csv'}));a.download=`${S.chi}_${S.year}_${S.month}.csv`;a.click()};
+init().catch(e=>toast('Không kết nối được máy chủ: '+e.message));
+</script></body></html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bản tin môi trường TP. Hồ Chí Minh · LST – NDVI – TVDI</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--ink:#10261c;--mut:#445a4f;--line:#c4dccd;--bg:#e9f7ee;--g:#0b5d33;--lst:#c2410c;--ndvi:#1f7a33;--tvdi:#0b6fa4}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.55 'Be Vietnam Pro',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:980px;margin:0 auto;padding:0 18px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px}
+.top a{color:var(--g);font-weight:700;text-decoration:none}
+.mast{background:linear-gradient(120deg,#0b5d33,#0b6fa4);color:#fff;border-radius:20px;padding:30px 28px;margin-bottom:16px}
+.mast small{letter-spacing:.14em;font-weight:700;opacity:.95}
+.mast h1{font-size:clamp(26px,5vw,40px);line-height:1.15;margin:6px 0 8px;font-weight:800}
+.mast p{margin:0;opacity:.95}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+.bar label{font-weight:700;font-size:13px}
+select,button{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+button{background:var(--g);color:#fff;border-color:var(--g);font-weight:700;cursor:pointer;margin-left:auto}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #c2410c;outline-offset:2px}
+.lead{background:#fff;border:1px solid var(--line);border-left:6px solid var(--g);border-radius:14px;padding:18px 20px;font-size:17px;margin-bottom:16px}
+.lead b{color:var(--g)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:16px}
+.k{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;border-top:5px solid var(--c)}
+.k span{font-size:13px;color:var(--mut);font-weight:500}
+.k .v{font-size:40px;font-weight:800;color:var(--c);line-height:1.1;margin:4px 0}
+.k .v small{font-size:15px;color:var(--mut);font-weight:500}
+.d{display:inline-block;font-size:13px;font-weight:700;border-radius:99px;padding:2px 10px}
+.d.good{background:#d6f3dd;color:#0d5a24}.d.bad{background:#fde1d3;color:#8a2c06}.d.n{background:#e6eef0;color:var(--mut)}
+.sec{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+h2{font-size:18px;margin:0 0 4px}.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
+.g2 .sec{margin:0}
+.r{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;margin:9px 0;font-size:14px}
+.r i{font-style:normal;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+.r div small{display:block;color:var(--mut);font-size:12px}
+.r b{color:var(--c)}
+.r .t{grid-column:2/4;height:6px;border-radius:9px;background:var(--c);opacity:.7;margin-top:-4px}
+.seg{display:flex;height:22px;border-radius:99px;overflow:hidden;margin:6px 0 12px}
+.cls{display:flex;align-items:center;gap:8px;margin:4px 0}.cls i{width:14px;height:14px;border-radius:4px;border:1px solid #0003}.cls span:last-child{margin-left:auto;font-weight:700}
+#cw{position:relative;height:300px}
+.msg{padding:30px;text-align:center;color:var(--mut)}
+footer{font-size:13px;color:var(--mut);padding:6px 0 30px;text-align:center}
+@media print{body{background:#fff}.bar,.top button{display:none}.sec,.k,.lead{break-inside:avoid}}
+</style></head><body><div class="wrap">
+<div class="top"><a href="/">← Trang chủ</a><a href="/map.html">Mở bản đồ →</a></div>
+<header class="mast"><small>BẢN TIN MÔI TRƯỜNG</small><h1>Nhiệt độ – Cây xanh – Khô hạn<br>TP. Hồ Chí Minh sau sáp nhập</h1><p id="ky">Đang tải…</p></header>
+<div class="bar"><label for="ny">Năm</label><select id="ny"></select><label for="nm">Kỳ</label><select id="nm"></select><button onclick="print()">In / lưu PDF</button></div>
+<div id="out"><div class="msg">Đang tải số liệu…</div></div>
+<footer id="ft"></footer>
+</div>
+<script>
+const $=i=>document.getElementById(i),api=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+const LY={lst:{n:'Nhiệt độ bề mặt (LST)',u:' °C',d:1,c:'#c2410c',good:-1},ndvi:{n:'Thảm thực vật (NDVI)',u:'',d:3,c:'#1f7a33',good:1},tvdi:{n:'Mức khô hạn (TVDI)',u:'',d:3,c:'#0b6fa4',good:-1}};
+const CLS=[['Rất ẩm','#066b00'],['Ẩm','#00ff00'],['Bình thường','#ffff00'],['Khô hạn','#ff6600'],['Rất khô hạn','#ff0000']];
+const MT=['Cả năm',...Array.from({length:12},(_,i)=>'Tháng '+(i+1)),'Mùa khô (T1–4, T11–12)'];
+const fmt=(x,d)=>x==null?'–':x.toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});
+const wm=r=>{const n=r.reduce((a,x)=>a+x.n,0);return r.reduce((a,x)=>a+x.tb*x.n,0)/n};
+let chart,META;
+const kv=(c,y,m)=>api(`/api/khuvuc?chi_so=${c}&nam=${y}&thang=${m}`);
+function delta(k,cur,prev,y){if(prev==null)return'<span class="d n">chưa có năm '+(y-1)+' để so sánh</span>';
+ const dd=cur-prev,L=LY[k],s=Math.abs(dd)<Math.pow(10,-L.d)/2?0:Math.sign(dd),cls=s===0?'n':(s===L.good?'good':'bad');
+ return`<span class="d ${cls}">${s>0?'▲ +':s<0?'▼ −':'■ '}${fmt(Math.abs(dd),L.d)}${L.u} so với ${y-1}</span>`}
+function rank(title,sub,k,rows){const lo=Math.min(...rows.map(x=>x.tb)),hi=Math.max(...rows.map(x=>x.tb));
+ return`<div class="sec" style="--c:${LY[k].c}"><h2>${title}</h2><p class="sub">${sub}</p>`+rows.map((x,i)=>`<div class="r"><i>${i+1}</i><div>${x.huyen||'?'}<small>${x.tinh||''}</small></div><b>${fmt(x.tb,LY[k].d)}${LY[k].u}</b><div class="t" style="width:${20+80*(x.tb-lo)/(hi-lo||1)}%"></div></div>`).join('')+'</div>'}
+async function build(){
+ const y=+$('ny').value,m=+$('nm').value,tag=`${MT[m].toLowerCase()} ${y}`;$('out').innerHTML='<div class="msg">Đang tải số liệu…</div>';
+ try{
+ const hasPrev=META.years.includes(y-1),ks=['lst','ndvi','tvdi'];
+ const cur=await Promise.all(ks.map(k=>kv(k,y,m))),prv=await Promise.all(ks.map(k=>hasPrev?kv(k,y-1,m):[]));
+ if(!cur[0].length){$('out').innerHTML='<div class="msg">Chưa có dữ liệu cho kỳ này.</div>';return}
+ const M={},P={};ks.forEach((k,i)=>{M[k]=wm(cur[i]);P[k]=prv[i].length?wm(prv[i]):null});
+ const cmp=(k,w1,w2)=>P[k]==null?'':(M[k]>P[k]?w1:w2);
+ $("ky").textContent=`Số liệu ${tag} · ảnh Landsat 8/9 · ${cur[0].length} huyện, thành phố`;
+ let h=`<div class="lead">Trong <b>${tag}</b>, nhiệt độ bề mặt trung bình toàn vùng đạt <b>${fmt(M.lst,1)} °C</b>${P.lst==null?'':` (${M.lst>P.lst?'cao hơn':'thấp hơn'} ${fmt(Math.abs(M.lst-P.lst),1)} °C so với ${y-1})`}, chỉ số thực vật NDVI ở mức <b>${fmt(M.ndvi,3)}</b>${cmp('ndvi',', tăng nhẹ',', giảm nhẹ')} và chỉ số khô hạn TVDI là <b>${fmt(M.tvdi,3)}</b>${cmp('tvdi',', khô hơn',', ẩm hơn')}. Huyện nóng nhất là <b>${cur[0][0].huyen}</b> (${fmt(cur[0][0].tb,1)} °C).</div><div class="kpis">`;
+ ks.forEach(k=>h+=`<div class="k" style="--c:${LY[k].c}"><span>${LY[k].n}</span><div class="v">${fmt(M[k],LY[k].d)}<small>${LY[k].u}</small></div>${delta(k,M[k],P[k],y)}</div>`);
+ h+='</div><div class="g2">';
+ const L=cur[0],N=cur[1],T=cur[2];
+ h+=rank('🔥 Nóng nhất','5 huyện có LST trung bình cao nhất','lst',L.slice(0,5));
+ h+=rank('❄️ Mát nhất','5 huyện có LST trung bình thấp nhất','lst',L.slice(-5).reverse());
+ h+=rank('🌳 Xanh nhất','5 huyện có NDVI cao nhất','ndvi',N.slice(0,5));
+ h+=rank('🏜️ Khô hạn nhất','5 huyện có TVDI cao nhất','tvdi',T.slice(0,5));
+ h+='</div><div class="sec"><h2>Phân cấp khô hạn (TVDI)</h2><p class="sub">Tỷ lệ ô lưới theo 5 cấp</p><div id="cls"></div></div>';
+ h+='<div class="sec"><h2>Diễn biến theo tháng</h2><p class="sub">Trung bình toàn vùng, toàn bộ chuỗi dữ liệu (nét đứt là dự báo nếu có)</p><div id="cw"><canvas id="ch"></canvas></div></div>';
+ $('out').innerHTML=h;
+ api(`/api/grid?chi_so=tvdi&nam=${y}&thang=${m}`).then(g=>{const c=[0,0,0,0,0];g.pts.forEach(p=>c[Math.min(4,Math.floor(p[2]*5))]++);const n=g.pts.length||1;
+  $('cls').innerHTML=`<div class="seg">${CLS.map((k,i)=>`<div style="flex:${c[i]};background:${k[1]}"></div>`).join('')}</div>`+CLS.map((k,i)=>`<div class="cls"><i style="background:${k[1]}"></i><span>${k[0]}</span><span>${fmt(c[i]/n*100,1)}%</span></div>`).join('')}).catch(()=>{});
+ api('/api/series').then(d=>{const labels=[...new Set([...d.hist.LST.map(x=>x[0]),...Object.values(d.pred).flat().map(x=>x[0])])].sort(),cl={LST:LY.lst.c,NDVI:LY.ndvi.c,TVDI:LY.tvdi.c},ds=[];
+  for(const k of['LST','NDVI','TVDI']){const hh=new Map(d.hist[k]),ax=k==='LST'?'y':'y1';
+   ds.push({label:k,data:labels.map(l=>hh.get(l)??null),borderColor:cl[k],backgroundColor:cl[k],yAxisID:ax,spanGaps:true,pointRadius:1.5,borderWidth:2,tension:.25});
+   if(d.pred[k]){const pr=new Map(d.pred[k].map(x=>[x[0],x[1]]));ds.push({label:k+' dự báo',data:labels.map(l=>pr.get(l)??null),borderColor:cl[k],borderDash:[5,4],yAxisID:ax,pointRadius:0,spanGaps:true,borderWidth:2})}}
+  chart&&chart.destroy();chart=new Chart($('ch'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{title:{display:true,text:'LST (°C)'}},y1:{position:'right',title:{display:true,text:'NDVI, TVDI'},grid:{drawOnChartArea:false}},x:{ticks:{maxTicksLimit:8}}}}})}).catch(()=>{});
+ }catch(e){$('out').innerHTML='<div class="msg">Không tải được dữ liệu: '+e.message+'</div>'}}
+(async()=>{try{META=await api('/api/meta');const ys=META.years;
+ $('ny').innerHTML=ys.map(y=>`<option>${y}</option>`).join('');$('ny').value=ys[ys.length-1];
+ $('nm').innerHTML=MT.map((t,i)=>`<option value="${i}">${t}</option>`).join('');
+ $('ny').onchange=$('nm').onchange=build;
+ $('ft').innerHTML=`Nguồn: Landsat 8/9 Collection 2 Level-2 (USGS) xử lý trên Google Earth Engine · CSDL PostgreSQL/PostGIS · Ranh giới huyện FAO GAUL 2015.<br>Lập ngày ${new Date().toLocaleDateString('vi-VN')} · Trường Đại học Tài nguyên và Môi trường TP. Hồ Chí Minh`;
+ build()}catch(e){$('out').innerHTML='<div class="msg">Không kết nối được máy chủ: '+e.message+'</div>'}})();
+</script></body></html>

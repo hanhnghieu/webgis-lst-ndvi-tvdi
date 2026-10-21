@@ -1,0 +1,10 @@
+earthengine-api>=0.1.390
+psycopg2-binary>=2.9
+numpy
+pandas
+scipy
+scikit-learn
+python-dotenv
+anthropic          # chỉ cần nếu dùng nhận xét AI (lệnh report)
+fastapi
+uvicorn
